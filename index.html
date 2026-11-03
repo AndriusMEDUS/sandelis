@@ -453,7 +453,7 @@ function svg(p){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentCol
 var HAS_GAS = !!(window.google && google.script && google.script.run);
 /* Ryšys su serveriu. Pirmiausia — tiesioginis (fetch be Google paskyros): veikia ir kai telefone kelios Google paskyros.
    Jei jis šiame telefone neveikia — automatiškai naudojamas įprastas google.script.run. */
-var EXEC_URL = https://script.google.com/macros/s/AKfycbyFC1jUHCa3H3-R2wVl-MDCAn4S3oi4mQz-Z1OyeKhY7vSOyF_E9dVY3Ah1sZeY6FIsXQ/exec;
+var EXEC_URL = 'https://script.google.com/macros/s/AKfycbyFC1jUHCa3H3-R2wVl-MDCAn4S3oi4mQz-Z1OyeKhY7vSOyF_E9dVY3Ah1sZeY6FIsXQ/exec';
 var VIA = /^https:\/\//.test(EXEC_URL) ? 'probe' : 'gas';   // 'probe' → 'fetch' arba 'gas'
 function gasCall(fn,args){
   return new Promise(function(res,rej){
