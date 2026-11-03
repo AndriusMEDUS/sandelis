@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap&subset=latin-ext">
+<style>
+:root{
+  --bg:#eef0f2; --surface:#ffffff; --ink:#1d2329; --muted:#5d6873; --line:#d5dade;
+  --accent:#e0a100; --accent-ink:#1d2329; --in:#1f7a4d; --in-soft:#e2f2e9; --warn:#b4510f; --warn-soft:#fbeadd; --late:#b3261e;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#14181c; --surface:#1d2227; --ink:#e8ecef; --muted:#9aa5ae; --line:#323a41;
+  --accent:#f2b71e; --accent-ink:#14181c; --in:#4cc286; --in-soft:#18302a; --warn:#f0954f; --warn-soft:#3a2617; --late:#ff8a80; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:520px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-right,0px)) calc(32px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+h1{font-family:var(--f-display);font-weight:700;font-size:26px;letter-spacing:.03em;text-transform:uppercase;margin:0}
+h2{font-family:var(--f-display);font-weight:700;font-size:24px;letter-spacing:.03em;text-transform:uppercase;margin:0;text-wrap:balance}
+.sec{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin:4px 0 -4px}
+.who{font-size:14px;color:var(--muted);text-align:right}
+.link{background:none;border:0;padding:0;font:inherit;font-size:13px;color:var(--muted);text-decoration:underline;cursor:pointer}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.stack{display:flex;flex-direction:column;gap:12px}
+/* lankomumas */
+.status{position:relative;overflow:hidden;padding-top:22px}
+.status::before{content:"";position:absolute;inset:0 0 auto 0;height:6px;background:repeating-linear-gradient(135deg,var(--accent) 0 12px,var(--ink) 12px 24px)}
+.status.on::before{background:var(--in)}
+.strow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.state{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:600;font-size:22px;text-transform:uppercase;letter-spacing:.04em}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--muted);flex:none}
+.on .dot{background:var(--in);box-shadow:0 0 0 4px var(--in-soft)}
+.since{color:var(--muted);font-size:14px}
+.att{font-family:var(--f-display);font-weight:700;font-size:20px;letter-spacing:.05em;text-transform:uppercase;border:0;border-radius:10px;padding:12px 18px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.on .att{background:var(--ink);color:var(--bg)}
+/* moduliai */
+.mods{display:flex;flex-direction:column;gap:10px}
+.mods.locked .mod{opacity:.55}
+.mods.locked .mod.free{opacity:1}
+.mod .free-t{font-size:12px;font-weight:600;color:var(--in)}
+.lockmsg{display:flex;gap:10px;align-items:center;background:var(--warn-soft);color:var(--ink);border-radius:10px;padding:10px 12px;font-size:14px}
+.lockmsg svg{width:22px;height:22px;flex:none;color:var(--warn)}
+.att.pulse{box-shadow:0 0 0 4px var(--warn-soft),0 0 0 6px var(--accent)}
+.mod{font:inherit;width:100%;text-align:left;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);padding:14px;cursor:pointer;display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center}
+.mod .ic{width:44px;height:44px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center}
+.mod .ic svg{width:26px;height:26px}
+.mod .t{font-family:var(--f-display);font-weight:700;font-size:20px;letter-spacing:.03em;text-transform:uppercase;line-height:1.1}
+.mod .s{font-size:13px;color:var(--muted)}
+.mod .num{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.06em}
+.badge{min-width:28px;height:28px;border-radius:14px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:14px;display:inline-flex;align-items:center;justify-content:center;padding:0 9px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.badge.late{background:var(--late);color:#fff}
+.badge.busy{background:var(--line);color:var(--ink)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{font-family:var(--f-display);font-weight:700;font-size:22px;letter-spacing:.05em;text-transform:uppercase;border:2px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);padding:22px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px}
+.tile svg{width:30px;height:30px}
+.tile.hint{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tile small{font-family:var(--f-body);font-size:13px;font-weight:600;letter-spacing:0;text-transform:none}
+/* formos */
+label.f{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.field{display:flex;flex-direction:column;gap:8px}
+select,input[type=text],input[type=email],input[type=password],input[type=date],input[type=number],textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;width:100%}
+textarea{min-height:84px;resize:vertical}
+.pin{font-size:28px;letter-spacing:.5em;text-align:center}
+.km{font-size:26px;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:15px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:9px 15px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px;background:var(--warn-soft);color:var(--ink);border-radius:8px;padding:10px 12px}
+.check input{width:20px;height:20px;margin:2px 0 0;flex:none}
+.photo{border:1px dashed var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.ph-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ph-head b{font-weight:600}
+.req{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--warn)}
+.opt-l{font-size:12px;color:var(--muted)}
+.hint-t{margin:0;font-size:13px;color:var(--muted)}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px}
+.thumbs:empty{display:none}
+.th{position:relative;width:76px;height:76px;border-radius:8px;overflow:hidden;background:var(--line)}
+.th img{width:100%;height:100%;object-fit:cover;display:block}
+.th button{position:absolute;top:3px;right:3px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:16px;line-height:26px;padding:0;cursor:pointer}
+.plist,.rlist{display:flex;flex-direction:column;gap:8px}
+.plist:empty{display:none}
+.prow{display:grid;grid-template-columns:1fr 30px;gap:10px;align-items:start;background:var(--bg);border-radius:10px;padding:10px}
+.prow .pnum{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pstrip{display:flex;flex-wrap:wrap;gap:6px}
+.pph{position:relative;width:60px;height:60px;border-radius:6px;overflow:hidden;background:var(--line)}
+.pph img{width:100%;height:100%;object-fit:cover;display:block}
+.pph button{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:14px;line-height:22px;padding:0;cursor:pointer}
+.padd{width:60px;height:60px;border-radius:6px;border:2px dashed var(--muted);background:transparent;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:inherit;font-size:11px;font-weight:600}
+.padd svg{width:20px;height:20px}
+.pinfo{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ptop{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.pst{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.pst.ok{color:var(--in)}
+.plabel{font-size:14px;font-weight:600;color:var(--ink);overflow-wrap:anywhere}
+.plabel.none{font-weight:400;font-size:13px;color:var(--muted)}
+.pact input{padding:8px 10px;font-size:15px;width:100%;font-variant-numeric:tabular-nums}
+.pact input.ok{border-color:var(--in);background:var(--in-soft)}
+.mini{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+.mini svg{width:16px;height:16px}
+.x{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:18px;line-height:1;cursor:pointer;padding:0}
+.rrow{display:grid;grid-template-columns:56px 1fr auto;gap:10px;align-items:center;background:var(--bg);border:1px solid transparent;border-radius:10px;padding:8px}
+.rrow.sel{border-color:var(--in);background:var(--in-soft)}
+.rrow .pic{width:56px;height:56px;border-radius:6px;background:var(--line);display:flex;align-items:center;justify-content:center;color:var(--muted);overflow:hidden}
+.rrow .pic img{width:100%;height:100%;object-fit:cover;display:block}
+.rrow .pic svg{width:24px;height:24px}
+.rinfo{min-width:0;display:flex;flex-direction:column;gap:2px}
+.rcode{font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.rdesc{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.rdesc.late{color:var(--late);font-weight:600}
+.rside{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.okb{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--in)}
+.ph-btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:inherit;font-weight:600;border-radius:10px;padding:12px 16px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn.cam{background:var(--ink);color:var(--bg);border-color:var(--ink);flex:1 1 160px}
+.btn.cam.solo{flex:none;padding:16px}
+.btn.gal{flex:0 1 auto}
+.btn svg{width:20px;height:20px}
+.big{font-family:var(--f-display);font-weight:700;font-size:22px;letter-spacing:.06em;text-transform:uppercase;border:0;border-radius:10px;padding:16px;cursor:pointer;background:var(--accent);color:var(--accent-ink);width:100%}
+.big:disabled{opacity:.55;cursor:default}
+.back{align-self:flex-start}
+.err{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:14px;font-weight:500}
+.info{background:var(--bg);border-radius:8px;padding:10px 12px;font-size:14px}
+.done{align-items:center;text-align:center;padding:32px 16px}
+.okc{width:72px;height:72px;border-radius:50%;background:var(--in-soft);color:var(--in);display:flex;align-items:center;justify-content:center}
+.okc svg{width:40px;height:40px}
+.muted{color:var(--muted);font-size:14px}
+.sugg{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:-4px}
+.sugg button{font:inherit;text-align:left;background:var(--surface);color:var(--ink);border:0;border-top:1px solid var(--line);padding:12px;cursor:pointer}
+.sugg button:first-child{border-top:0}
+.sugg .muted{padding:10px 12px}
+#nameIn.ok{border-color:var(--in);background:var(--in-soft)}
+.sugg button.on{background:var(--in-soft);font-weight:600}
+.sugg b{font-weight:700;text-decoration:underline;text-underline-offset:3px}
+/* transportas */
+.days{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity}
+.day{font:inherit;flex:none;width:62px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;scroll-snap-align:start}
+.day .wd{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.day .dn{font-family:var(--f-display);font-weight:700;font-size:22px;line-height:1.1}
+.day .mo{font-size:11px;color:var(--muted)}
+.day .bz{width:6px;height:6px;border-radius:50%;background:transparent;margin-top:2px}
+.day.has .bz{background:var(--warn)}
+.day[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.day[aria-pressed="true"] .wd,.day[aria-pressed="true"] .mo{color:var(--bg)}
+.times{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tcal{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.trow{display:grid;grid-template-columns:104px 1fr;gap:10px;padding:8px 10px;border-top:1px solid var(--line);font-size:14px}
+.trow:first-child{border-top:0}
+.trow .td{font-weight:600;color:var(--muted)}
+.trow.today .td{color:var(--ink)}
+.trow .free{color:var(--muted)}
+.trow .bk{display:block}
+.trow .bk.me{font-weight:600}
+.fuelmsg{font-size:15px}
+.tbtns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.mini.go{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+/* demo */
+input[type=search]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;width:100%}
+.dcat{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin:8px 0 -2px}
+.drow{font:inherit;text-align:left;width:100%;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;background:var(--bg);border:1px solid transparent;border-radius:10px;padding:10px 12px;cursor:pointer;color:var(--ink)}
+.drow .dn{font-weight:600}
+.drow .ds{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.st{font-size:12px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.st.free{background:var(--in-soft);color:var(--in)}
+.st.out{background:#e3eaf5;color:#2c3e57}
+.st.bk{background:#fff1c2;color:#6b4e00}
+.st.late{background:var(--late);color:#fff}
+.dres{display:flex;flex-direction:column;gap:8px;background:var(--bg);border-radius:10px;padding:10px 12px}
+.dres .tbtns{justify-content:flex-start}
+.dres .mini{padding:8px 14px}
+.times>.field{min-width:0}
+.times input{min-width:0}
+.dres .dd{font-family:var(--f-display);font-weight:700;font-size:19px;letter-spacing:.02em}
+.dres.past{opacity:.6}
+.rrow.trr{grid-template-columns:1fr auto;padding:10px 12px}
+.ttime{font-family:var(--f-display);font-size:22px;font-weight:700;letter-spacing:.03em}
+.trr .tbtns{flex-direction:column;align-items:stretch}
+.trr .mini{justify-content:center;padding:8px 12px}
+.loading{text-align:center;color:var(--muted);padding:48px 0}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,label.btn:focus-within{outline:3px solid var(--accent);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Sandėlis</h1>
+    <div class="who" id="who" hidden><span id="whoName"></span><br><button class="link" id="logout" type="button">Ne aš</button></div>
+  </header>
+
+  <div class="err" id="err" hidden></div>
+
+  <section id="vLoading" class="loading">Kraunama…</section>
+
+  <!-- Prisijungimas -->
+  <section id="vLogin" class="card" hidden>
+    <h2>Kas tu?</h2>
+    <div class="field">
+      <label class="f" for="nameIn">Vardas</label>
+      <input id="nameIn" type="text" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Įvesk pirmas vardo ar pavardės raides">
+      <div class="sugg" id="nameSugg" hidden></div>
+    </div>
+    <div class="field">
+      <label class="f" for="pinIn">PIN kodas</label>
+      <input id="pinIn" class="pin" type="password" inputmode="numeric" autocomplete="one-time-code" maxlength="8">
+    </div>
+    <button class="big" id="loginBtn" type="button">Prisijungti</button>
+    <button class="btn" id="goAct" type="button">Pirmą kartą jungiuosi / pamiršau PIN</button>
+    <p class="muted" style="margin:0">Telefonas tave prisimins, PIN reikės tik kartą.</p>
+  </section>
+
+  <!-- Pirmas prisijungimas: el. paštas → kodas → savas PIN -->
+  <section id="vAct" class="card" hidden>
+    <button class="link back" type="button" id="actBack">← Atgal</button>
+    <h2>Susikurk PIN</h2>
+    <div id="actStep1" class="stack">
+      <p class="hint-t">Įvesk savo el. paštą. Atsiųsime vienkartinį kodą, kad patvirtintume, jog tai tu.</p>
+      <div class="field">
+        <label class="f" for="actEmail">El. paštas</label>
+        <input id="actEmail" type="email" inputmode="email" autocomplete="email" placeholder="vardas@gmail.com">
+      </div>
+      <button class="big" id="sendCode" type="button">Siųsti kodą</button>
+    </div>
+    <div id="actStep2" class="stack" hidden>
+      <div class="info" id="actInfo"></div>
+      <div class="field">
+        <label class="f" for="actCode">Kodas iš laiško</label>
+        <input id="actCode" class="pin" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+      </div>
+      <div class="field">
+        <label class="f" for="actPin">Sugalvok PIN (4–8 skaitmenys)</label>
+        <input id="actPin" class="pin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8">
+      </div>
+      <div class="field">
+        <label class="f" for="actPin2">Pakartok PIN</label>
+        <input id="actPin2" class="pin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8">
+      </div>
+      <button class="big" id="actSave" type="button">Išsaugoti PIN ir prisijungti</button>
+      <button class="link" id="resend" type="button" style="align-self:flex-start">Kodas neatėjo? Siųsti dar kartą</button>
+      <p class="muted" style="margin:0">PIN žinosi tik tu. Jo nemato net sandėlio vadovas.</p>
+    </div>
+  </section>
+
+  <!-- Pagrindinis -->
+  <section id="vHome" class="stack" hidden>
+    <div class="card status" id="statusCard">
+      <div class="strow">
+        <div>
+          <div class="state"><span class="dot"></span><span id="stateText">Ne sandėlyje</span></div>
+          <div class="since" id="sinceText" hidden></div>
+        </div>
+        <button class="att" id="attBtn" type="button">Atvykau</button>
+      </div>
+    </div>
+    <div class="sec">Ką darai?</div>
+    <div class="lockmsg" id="lockMsg" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      <span>Paimti ar grąžinti galėsi, kai paspausi <b>„Atvykau“</b>. Demo įrangą ir transportą tvarkyti gali bet kada.</span>
+    </div>
+    <div class="mods" id="mods"></div>
+  </section>
+
+  <!-- Modulio meniu (paimti / grąžinti) -->
+  <section id="vMod" class="card" hidden>
+    <button class="link back" type="button" data-back>← Atgal</button>
+    <h2 id="modTitle"></h2>
+    <div class="tiles">
+      <button class="tile hint" id="goTake" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+        Paimti
+      </button>
+      <button class="tile" id="goRet" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg>
+        Grąžinti
+        <small id="retSmall"></small>
+      </button>
+    </div>
+    <div class="field">
+      <label class="f">Pas tave dabar</label>
+      <div class="rlist" id="modList"></div>
+    </div>
+  </section>
+
+  <!-- Paėmimas -->
+  <section id="vTake" class="card" hidden>
+    <button class="link back" type="button" data-back-mod>← Atgal</button>
+    <h2 id="takeTitle">Paėmimas</h2>
+
+    <div class="photo" id="invBlock">
+      <div class="ph-head"><b>Sąskaitos nuotrauka</b><span class="req">Būtina</span></div>
+      <div class="thumbs" id="thumbs-inv"></div>
+      <div class="ph-btns">
+        <label class="btn cam">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Fotografuoti<input class="sr" type="file" accept="image/*" capture="environment" data-kind="inv">
+        </label>
+        <label class="btn gal">Iš galerijos<input class="sr" type="file" accept="image/*" multiple data-kind="inv"></label>
+      </div>
+      <div class="field"><label class="f" for="invNo">Sąskaitos nr. (nebūtina)</label><input id="invNo" type="text" maxlength="60"></div>
+    </div>
+
+    <div class="photo">
+      <div class="ph-head"><b id="itemsHead">Paimami daiktai</b><span class="req" id="itemsReq">Būtina</span><span class="opt-l" id="itemsOpt">Nebūtina</span></div>
+      <p class="hint-t">Kiekvienam daiktui gali pridėti iki 4 nuotraukų: QR ar brūkšninį kodą, serijos numerį (SN) ir bendrą vaizdą. Kodas nuskaitomas automatiškai.</p>
+      <div class="plist" id="plist"></div>
+      <div class="ph-btns">
+        <label class="btn cam">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Naujas daiktas<input class="sr" type="file" accept="image/*" capture="environment" data-kind="parts">
+        </label>
+        <label class="btn gal">Iš galerijos<input class="sr" type="file" accept="image/*" multiple data-kind="parts"></label>
+      </div>
+    </div>
+
+    <div class="field"><label class="f" for="descIn" id="descLbl">Aprašas</label><textarea id="descIn" maxlength="2000"></textarea></div>
+    <div class="field" id="targetBox"><label class="f" for="targetIn" id="targetLbl"></label><input id="targetIn" type="text" maxlength="200"></div>
+    <div class="field" id="dueBox"><label class="f" for="dueIn" id="dueLbl">Grąžinsiu iki</label><input id="dueIn" type="date"></div>
+    <button class="big" id="sendTake" type="button">Patvirtinti paėmimą</button>
+  </section>
+
+  <!-- Grąžinimas -->
+  <section id="vRet" class="card" hidden>
+    <button class="link back" type="button" data-back-mod>← Atgal</button>
+    <h2 id="retTitle">Grąžinimas</h2>
+    <p class="hint-t">Nufotografuok kiekvieną grąžinamą daiktą taip, kad matytųsi jo kodas. Daiktas sąraše pažymimas automatiškai.</p>
+    <label class="btn cam solo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      Fotografuoti grąžinamą daiktą
+      <input class="sr" type="file" accept="image/*" capture="environment" id="retCam">
+    </label>
+    <div class="field"><label class="f">Pas tave</label><div class="rlist" id="rlist"></div></div>
+    <div class="field" id="xBox" hidden><label class="f">Nerasta tarp tavo paimtų</label><div class="rlist" id="xlist"></div></div>
+    <button class="big" id="sendRet" type="button">Patvirtinti grąžinimą</button>
+  </section>
+
+  <!-- Demo įranga -->
+  <section id="vDemo" class="card" hidden>
+    <button class="link back" type="button" data-back>← Atgal</button>
+    <h2>Demo įranga</h2>
+    <input id="dmQ" type="search" autocomplete="off" placeholder="Ieškoti: pavadinimas, SN, klientas">
+    <div class="chips" id="dmFilt"></div>
+    <div class="muted" id="dmCount"></div>
+    <div class="rlist" id="dmList"></div>
+  </section>
+
+  <section id="vDemoItem" class="card" hidden>
+    <button class="link back" type="button" data-back-demo>← Į sąrašą</button>
+    <h2 id="diName"></h2>
+    <div class="muted" id="diMeta"></div>
+    <div class="info" id="diState"></div>
+    <div class="muted" id="diNote"></div>
+    <button class="big" id="diBook" type="button">+ Rezervuoti / išduoti</button>
+    <div class="field"><label class="f">Rezervacijos</label><div class="rlist" id="diRes"></div></div>
+  </section>
+
+  <section id="vDemoBook" class="card" hidden>
+    <button class="link back" type="button" data-back-demoitem>← Atgal</button>
+    <h2 id="dbTitle">Rezervacija</h2>
+    <div class="muted" id="dbItem"></div>
+    <div class="times">
+      <div class="field"><label class="f" for="dbFrom">Nuo</label><input id="dbFrom" type="date"></div>
+      <div class="field"><label class="f" for="dbTo">Iki</label><input id="dbTo" type="date"></div>
+    </div>
+    <div class="chips" id="dbDur"></div>
+    <div class="info" id="dbBusy"></div>
+    <div class="field"><label class="f" for="dbClient">Klientas / vieta</label><input id="dbClient" type="text" maxlength="200" placeholder="pvz. Kauno klinikos, reanimacija"></div>
+    <div class="field" id="dbNoteBox"><label class="f" for="dbNote">Pastaba (nebūtina)</label><input id="dbNote" type="text" maxlength="300" placeholder="pvz. su vežimėliu ir kabeliais"></div>
+    <label class="check" id="dbIssueBox"><input type="checkbox" id="dbIssue"><span>Išduodu dabar — įranga jau atiduota klientui</span></label>
+    <button class="big" id="dbSave" type="button">Rezervuoti</button>
+  </section>
+
+  <!-- Transportas -->
+  <section id="vTr" class="card" hidden>
+    <button class="link back" type="button" data-back>← Atgal</button>
+    <h2>Transportas</h2>
+    <div class="muted" id="trVeh"></div>
+    <div class="field"><label class="f">Mano rezervacijos</label><div class="rlist" id="trMine"></div></div>
+    <button class="big" id="trNew" type="button">+ Rezervuoti</button>
+    <div class="field"><label class="f">Užimtumas artimiausiomis dienomis</label><div class="tcal" id="trCal"></div></div>
+  </section>
+
+  <section id="vTrBook" class="card" hidden>
+    <button class="link back" type="button" data-back-tr>← Atgal</button>
+    <h2>Rezervacija</h2>
+    <div class="field" id="trVehBox"><label class="f" for="trVehSel">Transportas</label><select id="trVehSel"></select></div>
+    <div class="field"><label class="f">Diena</label>
+      <div class="days" id="trDays"></div>
+      <input id="trDate" type="date" aria-label="Kita diena">
+    </div>
+    <div class="info" id="trDayBusy"></div>
+    <div class="times">
+      <div class="field"><label class="f" for="trFrom">Paimsiu</label><select id="trFrom"></select></div>
+      <div class="field"><label class="f" for="trTo">Grąžinsiu</label><select id="trTo"></select></div>
+    </div>
+    <div class="field"><label class="f" for="trPurpose">Kur važiuosi (nebūtina)</label><input id="trPurpose" type="text" maxlength="300" placeholder="pvz. Klaipėda, ligoninė, remontas"></div>
+    <button class="big" id="trBook" type="button">Rezervuoti</button>
+  </section>
+
+  <section id="vTrRet" class="card" hidden>
+    <button class="link back" type="button" data-back-tr>← Atgal</button>
+    <h2 id="trRetTitle">Grąžinimas</h2>
+    <div class="photo">
+      <div class="ph-head"><b>Prietaisų skydelis</b><span class="req">Būtina</span></div>
+      <p class="hint-t">Kad matytųsi kuro lygis ir klaidų lemputės.</p>
+      <div class="thumbs" id="thumbs-dash"></div>
+      <label class="btn cam solo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Fotografuoti skydelį<input class="sr" type="file" accept="image/*" capture="environment" id="dashCam"></label>
+    </div>
+    <div class="photo">
+      <div class="ph-head"><b>Bagažinė</b><span class="req">Būtina</span></div>
+      <p class="hint-t">Kad matytųsi, jog bagažinė tuščia ir tvarkinga.</p>
+      <div class="thumbs" id="thumbs-trunk"></div>
+      <label class="btn cam solo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Fotografuoti bagažinę<input class="sr" type="file" accept="image/*" capture="environment" id="trunkCam"></label>
+    </div>
+    <div class="lockmsg fuelmsg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 22V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v17M3 22h12M6 8h6M15 10h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V8l-3-3"/></svg><span>Transportas grąžinamas su <b>pilnu kuro baku</b>.</span></div>
+    <div class="field"><label class="f">Kuro bakas</label><div class="chips" id="fuelChips"></div></div>
+    <div class="field"><label class="f" for="notesIn" id="notesLbl">Pastabos, gedimai (nebūtina)</label><textarea id="notesIn" maxlength="500" placeholder="pvz. dega variklio lemputė, įbrėžimas"></textarea></div>
+    <button class="big" id="trRet" type="button">Patvirtinti grąžinimą</button>
+  </section>
+
+  <input class="sr" type="file" accept="image/*" capture="environment" id="codeCam" aria-label="Nufotografuok kodą">
+  <input class="sr" type="file" accept="image/*" capture="environment" id="addCam" aria-label="Pridėk nuotrauką prie daikto">
+  <div id="qrHidden" style="position:absolute;left:-9999px;width:300px;height:300px"></div>
+
+  <!-- Atlikta -->
+  <section id="vDone" class="card done" hidden>
+    <div class="okc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg></div>
+    <h2>Užregistruota</h2>
+    <div class="muted" id="doneMsg"></div>
+    <button class="big" id="doneBtn" type="button">Gerai</button>
+  </section>
+</div>
+
+<script>
+var S = { cfg:null, me:null, name:'', token:'', mod:'', photos:{inv:[],parts:[],dash:[],trunk:[]}, fuel:'', busy:false };
+var $ = function(id){ return document.getElementById(id); };
+var VIEWS = ['vLoading','vLogin','vAct','vHome','vMod','vTake','vRet','vTr','vTrBook','vTrRet','vDemo','vDemoItem','vDemoBook','vDone'];
+var ICONS = {
+  demo:'<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M9 9l3 2-3 2z"/>',
+  repair:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
+  invoice:'<path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/>',
+  tools:'<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M8 8V5h8v3M3 13h18M11 13v2h2v-2"/>',
+  bus:'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M3 11h18M7 17v3M17 17v3"/><circle cx="7.5" cy="14" r="1"/><circle cx="16.5" cy="14" r="1"/>'
+};
+function svg(p){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>'; }
+
+/* ---- serveris (google.script.run) arba pavyzdys peržiūrai ---- */
+var HAS_GAS = !!(window.google && google.script && google.script.run);
+/* Ryšys su serveriu. Pirmiausia — tiesioginis (fetch be Google paskyros): veikia ir kai telefone kelios Google paskyros.
+   Jei jis šiame telefone neveikia — automatiškai naudojamas įprastas google.script.run. */
+var EXEC_URL = https://script.google.com/macros/s/AKfycbyFC1jUHCa3H3-R2wVl-MDCAn4S3oi4mQz-Z1OyeKhY7vSOyF_E9dVY3Ah1sZeY6FIsXQ/exec;
+var VIA = /^https:\/\//.test(EXEC_URL) ? 'probe' : 'gas';   // 'probe' → 'fetch' arba 'gas'
+function gasCall(fn,args){
+  return new Promise(function(res,rej){
+    var r = google.script.run.withSuccessHandler(res).withFailureHandler(function(e){ rej(e && e.message ? e : new Error(String(e))); });
+    r[fn].apply(r,args);
+  });
+}
+function fetchCall(fn,args){
+  return fetch(EXEC_URL,{method:'POST',credentials:'omit',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({fn:fn,args:args})})
+    .then(function(r){ return r.text(); })
+    .then(function(t){ var o; try{ o=JSON.parse(t); }catch(e){ var x=new Error('NOJSON'); x.noJson=true; throw x; }
+      if(!o || !o.ok) throw new Error((o && o.error) || 'Nepavyko.'); return o.r; });
+}
+function call(fn){
+  var args = Array.prototype.slice.call(arguments,1);
+  if(!HAS_GAS){
+    // puslapis talpinamas ne Google (pvz. GitHub Pages): visada tiesioginis ryšys su serveriu
+    if(/^https:\/\//.test(EXEC_URL)) return fetchCall(fn,args);
+    return MOCK[fn].apply(null,args);      // peržiūra be serverio
+  }
+  if(VIA==='gas') return gasCall(fn,args);
+  if(VIA==='fetch') return fetchCall(fn,args);
+  // pirmas kvietimas (tik skaitymas, pvz. api_init) — patikrinama, ar tiesioginis ryšys veikia
+  return fetchCall(fn,args).then(function(r){ VIA='fetch'; return r; }, function(e){
+    if(e && (e.noJson || e instanceof TypeError)){ VIA='gas'; return gasCall(fn,args); }
+    VIA='fetch'; throw e;
+  });
+}
+
+/* ---- Pavyzdiniai duomenys: veikia tik atidarius failą ne per Google ---- */
+var DEMO = (function(){
+  function pd(n){ var d=new Date(); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  return {items:[
+    {id:'DE001',name:'A7 #1',sn:'FS6-41000170',cat:'Anestezija',country:'LT',note:''},
+    {id:'DE003',name:'A9 #1',sn:'FX7-69002576',cat:'Anestezija',country:'LT',note:'Returned from Plungė 10-29'},
+    {id:'DE020',name:'N17',sn:'F2-27019493',cat:'Monitoriai',country:'LT',note:''},
+    {id:'DE031',name:'uMEC120',sn:'FT6-58024692',cat:'Monitoriai',country:'LT',note:''},
+    {id:'DE033',name:'uMEC120',sn:'FT6-58024694',cat:'Monitoriai',country:'LT',note:''},
+    {id:'DE061',name:'nSP TCI',sn:'SG1-1C005565',cat:'Infuzinės pompos',country:'LT',note:''},
+    {id:'DE082',name:'D60',sn:'FP1-37000273',cat:'Defibriliatoriai',country:'LV',note:''},
+    {id:'DE086',name:'UX5',sn:'FK8-43000314',cat:'Chirurgija',country:'LT',note:'Planuota: Joniškis, Visaginas'}],
+  res:[{id:'R1',itemId:'DE003',from:pd(-6),to:pd(8),client:'Plungės ligoninė, OR',who:'Rūta Jonaitė',status:'Išduota',note:''},
+       {id:'R2',itemId:'DE020',from:pd(-10),to:pd(-2),client:'Kauno klinikos',who:'Tomas Petraitis',status:'Išduota',note:''},
+       {id:'R3',itemId:'DE086',from:pd(3),to:pd(10),client:'Joniškio ligoninė',who:'Mantas Kazlauskas',status:'Rezervuota',note:''},
+       {id:'R4',itemId:'DE003',from:pd(12),to:pd(20),client:'Šakių ligoninė',who:'Tomas Petraitis',status:'Rezervuota',note:''}]};
+})();
+var MOCK = (function(){
+  var me={name:'Tomas Petraitis',inside:false,out:[
+    {id:'D1',mod:'repair',code:'MŽ010001',item:'Kolonoskopas WISAP VCL821624',desc:'Siurblio sandarinimo žiedas',target:'Klinika, rem. nr. 118',at:'2026-10-21T07:15:00Z',due:''},
+    {id:'D2',mod:'demo',code:'SN-77412',desc:'Ultragarso aparatas Demo-2',target:'UAB Dantukas',at:'2026-10-12T07:15:00Z',due:'2026-10-19'},
+    {id:'D3',mod:'tools',code:'',desc:'Perforatorius Bosch',target:'',at:'2026-10-22T11:00:00Z',due:''}],
+    transport:{vehicles:['VW Crafter ABC 123'],mine:[],open:[],busy:[]}};
+  (function(){ function pd(n){ var d=new Date(); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+    me.transport.busy=[{id:'X1',vehicle:'VW Crafter ABC 123',day:pd(0),from:'08:00',to:'12:00',name:'Rūta Jonaitė',status:'Rezervuota'},
+      {id:'X2',vehicle:'VW Crafter ABC 123',day:pd(2),from:'07:30',to:'18:00',name:'Mantas Kazlauskas',status:'Rezervuota'}]; })();
+  function later(v){ return new Promise(function(r){ setTimeout(function(){ r(v); },400); }); }
+  var hm=function(){ return new Date().toLocaleTimeString('lt-LT',{hour:'2-digit',minute:'2-digit'}); };
+  var cfg={tr:{from:'06:00',to:'22:00',step:30,days:90,fuel:['Pilnas','Ne pilnas']},demoDays:7,maxPhotos:5,me:null,mods:[
+    {key:'demo',title:'Demo įranga',sub:'Kur ir kam išduota, rezervacijos',ledger:false},
+    {key:'repair',title:'Skubus remontas',sub:'Detalės be sąskaitos: paėmimas ir grąžinimas',ledger:true,target:'Objektas / remonto nr.',targetRequired:true,due:false,dueRequired:false,descLabel:'Kokios detalės',descHint:'Pavadinimas ir kiekis, pvz. Sandarinimo žiedas – 2 vnt.'},
+    {key:'invoice',title:'Prekės su sąskaita',sub:'Paėmimas pagal sąskaitą',ledger:false,target:'',targetRequired:false,due:false,dueRequired:false,descLabel:'Kokios prekės',descHint:'Pavadinimas ir kiekis, kiekvienas naujoje eilutėje'},
+    {key:'tools',title:'Įrankiai',sub:'Paėmimas ir grąžinimas',ledger:true,target:'Objektas (nebūtina)',targetRequired:false,due:true,dueRequired:false,descLabel:'Koks įrankis',descHint:'Pavadinimas, pvz. Perforatorius Bosch'},
+    {key:'bus',title:'Transportas',sub:'Rezervacija, paėmimas ir grąžinimas',ledger:false}]};
+  return {
+    me:me,
+    api_init:function(){ return later(cfg); },
+    api_demoList:function(){ return later(DEMO); },
+    api_demo:function(n,t,d){ MOCK.last=d; var td=new Date().toISOString().slice(0,10), x=DEMO.res.filter(function(r){return r.id===d.id;})[0], msg='';
+      if(d.action==='book'){ var it=DEMO.items.filter(function(i){return i.id===d.itemId;})[0]; DEMO.res.push({id:'R'+Date.now(),itemId:d.itemId,from:d.from,to:d.to,client:d.client,who:n,status:d.issueNow?'Išduota':'Rezervuota',note:d.note||''}); msg=it.name+(d.issueNow?' išduota: ':' rezervuota: ')+d.client+', '+d.from+' – '+d.to; }
+      if(d.action==='edit'){ x.from=d.from; x.to=d.to; x.client=d.client; msg='Pakeista'; }
+      if(d.action==='issue'){ x.status='Išduota'; msg='Išduota'; }
+      if(d.action==='return'){ x.status='Grąžinta'; msg='Grąžinta'; }
+      if(d.action==='cancel'){ x.status='Atšaukta'; msg='Atšaukta'; }
+      return later({me:me,msg:msg,demo:DEMO}); },
+    api_findNames:function(q){ var f=function(x){ return x.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }; q=f(q);
+      return later(['Tomas Petraitis','Rūta Jonaitė','Mantas Kazlauskas'].filter(function(n){ return f(n).split(' ').some(function(w){ return w.indexOf(q)===0; }); })); },
+    api_lookup:function(n,t,codes){ var cat={'MŽ010001':'Kolonoskopas WISAP VCL821624','MŽ010005':'Gastroskopas WISAP VGT821781'}; var o={}; codes.forEach(function(c){ var k=normCode(c); o[k]=cat[k]||''; }); return later(o); },
+    api_sendCode:function(e){ if(e!=='tomas@gmail.com') return Promise.reject(new Error('Šio el. pašto nėra technikų sąraše. Kreipkis į sandėlio vadovą.')); return later({name:'Tomas Petraitis',masked:'to•••@gmail.com'}); },
+    api_activate:function(e,c,p){ if(c!=='123456') return Promise.reject(new Error('Neteisingas kodas. Patikrink laišką.')); return later({name:'Tomas Petraitis',token:'demo',me:me}); },
+    api_login:function(n,p){ return p==='1234'?later({token:'demo',me:me}):Promise.reject(new Error('Neteisingas vardas arba PIN.')); },
+    api_attend:function(n,t,a,req){ MOCK.attCalls=(MOCK.attCalls||0)+1; if(MOCK.offline) return new Promise(function(r,j){ setTimeout(function(){ j(new Error('NetworkError')); },200); }); me.inside=a==='in'; me.since=(req&&req.at)||new Date().toISOString(); return later({me:me,msg:(a==='in'?'Atvykimas':'Išvykimas')+' pažymėtas '+hm()}); },
+    api_take:function(n,t,mod,d){ MOCK.last=d; if(mod!=='invoice') d.items.forEach(function(x,i){ me.out.push({id:'N'+Date.now()+i,mod:mod,code:x.code,desc:d.desc,target:d.target,at:new Date().toISOString(),due:d.due||''}); });
+      return later({me:me,msg:(mod==='invoice'?'Prekės su sąskaita užregistruotos':'Paimta '+d.items.length+' vnt.')}); },
+    api_return:function(n,t,mod,items){ MOCK.last=items; var ids=items.map(function(x){return x.id;}); me.out=me.out.filter(function(o){return ids.indexOf(o.id)<0;}); return later({me:me,msg:'Grąžinta į sandėlį '+items.length+' vnt.'}); },
+    api_transport:function(n,t,d){ MOCK.last=d; var T=me.transport;
+      if(d.action==='book'){ var r={id:'N'+Date.now(),vehicle:d.vehicle,day:d.day,from:d.from,to:d.to,name:n,status:'Rezervuota',purpose:d.purpose,mine:true}; T.mine.push(r); T.busy.push(r); return later({me:me,msg:d.vehicle+' rezervuotas '+d.day+' '+d.from+'–'+d.to}); }
+      var r=T.mine.filter(function(x){return x.id===d.id;})[0];
+      if(d.action==='cancel'){ T.mine=T.mine.filter(function(x){return x!==r;}); T.busy=T.busy.filter(function(x){return x!==r;}); return later({me:me,msg:'Rezervacija atšaukta'}); }
+      if(d.action==='take'){ r.status='Paimta'; return later({me:me,msg:r.vehicle+' paimtas · grąžink iki '+r.to+' su pilnu kuro baku'}); }
+      T.mine=T.mine.filter(function(x){return x!==r;}); return later({me:me,msg:r.vehicle+' grąžintas · ačiū!'}); }
+  };
+})();
+
+/* ---- atmintis telefone ---- */
+function load(){ try{ var v=JSON.parse(localStorage.getItem('sandelis')||'{}'); S.name=v.name||''; S.token=v.token||''; }catch(e){} }
+function save(){ try{ localStorage.setItem('sandelis',JSON.stringify({name:S.name,token:S.token})); }catch(e){} }
+function forget(){ S.name=''; S.token=''; S.me=null; try{ localStorage.removeItem('sandelis'); }catch(e){} }
+
+/* ---- pagalbinės ---- */
+function show(id){ VIEWS.forEach(function(v){ $(v).hidden = v!==id; }); $('err').hidden=true; window.scrollTo(0,0); }
+function err(m){ $('err').textContent=m; $('err').hidden=false; window.scrollTo(0,0); }
+function hm(iso){ return new Date(iso).toLocaleTimeString('lt-LT',{hour:'2-digit',minute:'2-digit'}); }
+function dshort(iso){ return iso ? new Date(iso).toLocaleDateString('lt-LT',{month:'2-digit',day:'2-digit'}) : ''; }
+function today(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function plusDays(n){ var d=new Date(); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function isLate(o){ return o.due && o.due < today(); }
+function modCfg(k){ return S.cfg.mods.filter(function(m){ return m.key===k; })[0]; }
+function myOut(k){ return ((S.me&&S.me.out)||[]).filter(function(o){ return o.mod===k; }); }
+function busy(btn,on,label){ S.busy=on; btn.disabled=on; if(label) btn.textContent=label; }
+function el(tag,cls,txt){ var e=document.createElement(tag); if(cls) e.className=cls; if(txt!==undefined) e.textContent=txt; return e; }
+
+/* ---- pagrindinis ---- */
+function renderHome(){
+  var me=S.me||{}, on=!!me.inside;
+  $('who').hidden=false; $('whoName').textContent=S.name;
+  $('statusCard').classList.toggle('on',on);
+  $('stateText').textContent = on ? 'Esi sandėlyje' : 'Ne sandėlyje';
+  $('sinceText').hidden=!on; if(on) $('sinceText').textContent='Atvykai '+hm(me.since);
+  $('attBtn').textContent = on ? 'Išvykstu' : 'Atvykau';
+  var box=$('mods'); box.textContent='';
+  box.classList.toggle('locked',!on); $('lockMsg').hidden=on;
+  S.cfg.mods.forEach(function(m,i){
+    var b=el('button','mod'+(m.key==='bus'||m.key==='demo'?' free':'')); b.type='button';
+    var ic=el('span','ic'); ic.innerHTML=svg(ICONS[m.key]||'');
+    var tx=el('span'); tx.append(el('div','num',(i+1)+'.'),el('div','t',m.title),el('div','s',m.sub));
+    if((m.key==='bus'||m.key==='demo') && !on) tx.appendChild(el('div','free-t',m.key==='demo'?'Galima ir ne sandėlyje':'Rezervuoti galima ir ne sandėlyje'));
+    var side=el('span');
+    if(m.ledger){
+      var list=myOut(m.key), late=list.filter(isLate).length;
+      if(list.length){ var bd=el('span','badge'+(late?' late':''),late?late+' vėluoja':String(list.length)); bd.title='Pas tave negrąžinta'; side.appendChild(bd); }
+    } else if(m.key==='demo'){
+      var dm=me.demo||{};
+      if(dm.late) side.appendChild(el('span','badge late',dm.late+' vėluoja'));
+      else if(dm.count) side.appendChild(el('span','badge',String(dm.count)));
+    } else if(m.key==='bus'){
+      var tm=(me.transport&&me.transport.mine)||[];
+      var tk=tm.filter(function(x){ return x.status==='Paimta'; })[0], td=tm.filter(function(x){ return x.status==='Rezervuota'&&x.day===today(); })[0];
+      if(tk) side.appendChild(el('span','badge','Pas tave'));
+      else if(td) side.appendChild(el('span','badge','Šiandien '+td.from));
+      else if(tm.length) side.appendChild(el('span','badge busy',String(tm.length)));
+    }
+    b.append(ic,tx,side);
+    b.onclick=function(){
+      if(m.key==='bus'||m.key==='demo') return openMod(m.key);   // galima ir ne sandėlyje
+      if(!(S.me&&S.me.inside)){
+        $('err').className='err'; err('Pirmiausia paspausk „Atvykau“. Paimti ar grąžinti galima tik pažymėjus atvykimą į sandėlį.');
+        $('attBtn').classList.add('pulse'); setTimeout(function(){ $('attBtn').classList.remove('pulse'); },2500);
+        return;
+      }
+      openMod(m.key);
+    };
+    box.appendChild(b);
+  });
+  show('vHome');
+}
+/* ---- atvykimas / išvykimas: paspaudimas išsaugomas telefone ir kartojamas, kol serveris patvirtina
+   (net jei telefonas iškart užrakinamas). Įrašomas paspaudimo laikas; pakartotinis siuntimas dublio nesukuria. ---- */
+var ATT_KEY='sandelis_att', attSending=0, attTimer=null;
+function attGet(){ try{ return JSON.parse(localStorage.getItem(ATT_KEY)||'null'); }catch(e){ return S.att||null; } }
+function attSet(p){ S.att=p; try{ if(p) localStorage.setItem(ATT_KEY,JSON.stringify(p)); else localStorage.removeItem(ATT_KEY); }catch(e){} }
+function attNote(t,cls){ $('err').textContent=t; $('err').className=cls||'info'; $('err').hidden=false; }
+function attFlush(){
+  var p=attGet(); if(!p) return;
+  if(!S.name || !S.token || !S.me) return;                  // dar neprisijungta — palaukiam
+  if(p.name!==S.name){ attSet(null); return; }            // kitas žmogus šiame telefone
+  if(attSending && Date.now()-attSending<20000) return;      // ankstesnis bandymas galėjo „užstrigti“ užrakinus telefoną
+  attSending=Date.now(); clearTimeout(attTimer);
+  call('api_attend',S.name,S.token,p.action,{id:p.id,at:p.at}).then(function(r){
+    var cur=attGet(); if(cur && cur.id===p.id) attSet(null);
+    S.me=r.me; if(!$('vHome').hidden){ renderHome(); attNote('✓ '+r.msg); }
+  }).catch(function(e){
+    var m=(e&&e.message)||'';
+    if(/Prisijunk iš naujo/.test(m)){ attSet(null); fail(e); return; }
+    if(!$('vHome').hidden) attNote('Dar neišsiųsta — bus pakartota automatiškai, kai atsiras internetas.','err');
+    attTimer=setTimeout(attFlush,15000);
+  }).then(function(){ attSending=0; });
+}
+document.addEventListener('visibilitychange',function(){ if(!document.hidden) attFlush(); });
+window.addEventListener('online',attFlush);
+window.addEventListener('pageshow',attFlush);
+$('attBtn').onclick=function(){
+  if(S.busy) return;
+  if(attGet()){ attNote('Ankstesnis paspaudimas dar siunčiamas…'); attSending=0; attFlush(); return; }
+  var on=S.me&&S.me.inside, action=on?'out':'in', now=new Date();
+  attSet({id:'a'+now.getTime().toString(36)+Math.random().toString(36).slice(2,8), action:action, at:now.toISOString(), name:S.name});
+  S.me=S.me||{}; S.me.inside=(action==='in'); if(S.me.inside) S.me.since=now.toISOString();
+  renderHome(); attNote((action==='in'?'Atvykimas ':'Išvykimas ')+hm(now.toISOString())+' išsaugotas telefone, siunčiama…');
+  attFlush();
+};
+function show2(id){ $('err').className='err'; show(id); }
+
+/* ---- modulis ---- */
+function openMod(k){
+  S.mod=k; var m=modCfg(k);
+  if(k==='invoice') return openTake();
+  if(k==='bus') return openTr();
+  if(k==='demo') return openDemo();
+  $('modTitle').textContent=m.title;
+  var list=myOut(k);
+  $('retSmall').textContent = list.length ? 'Pas tave: '+list.length : 'Nieko negrąžinta';
+  $('goRet').classList.toggle('hint',list.length>0); $('goTake').classList.toggle('hint',!list.length);
+  var box=$('modList'); box.textContent='';
+  if(!list.length) box.appendChild(el('div','muted','Pas tave nieko nėra.'));
+  list.forEach(function(o){ box.appendChild(outRow(o,null)); });
+  show2('vMod');
+}
+function outRow(o,side){
+  var row=el('div','rrow'); var pic=el('div','pic'); pic.innerHTML=svg('<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>');
+  var info=el('div','rinfo'); info.append(el('div','rcode',o.code||'Be kodo'));
+  if(o.item) info.appendChild(el('div','plabel',o.item));
+  info.appendChild(el('div','rdesc',[o.desc,o.target].filter(Boolean).join(' · ')));
+  var d=el('div','rdesc'+(isLate(o)?' late':''),'Paimta '+dshort(o.at)+(o.due?' · grąžinti iki '+o.due.slice(5):'')+(isLate(o)?' · vėluoja':''));
+  info.appendChild(d);
+  row.append(pic,info,side||el('span'));
+  return row;
+}
+$('goTake').onclick=function(){ openTake(); };
+$('goRet').onclick=function(){ openReturn(); };
+document.querySelectorAll('[data-back]').forEach(function(b){ b.onclick=function(){ if(!S.busy) renderHome(); }; });
+document.querySelectorAll('[data-back-mod]').forEach(function(b){ b.onclick=function(){ if(S.busy) return; if(S.mod==='invoice') renderHome(); else openMod(S.mod); }; });
+
+/* ---- paėmimas ---- */
+function openTake(){
+  var m=modCfg(S.mod), inv=S.mod==='invoice';
+  S.photos={inv:[],parts:[],dash:[],trunk:[]};
+  $('takeTitle').textContent = m.title+': paėmimas';
+  $('invBlock').hidden=!inv; $('invNo').value='';
+  $('itemsHead').textContent = inv ? 'Prekių nuotraukos' : 'Paimami daiktai';
+  $('itemsReq').hidden=inv; $('itemsOpt').hidden=!inv;
+  $('descLbl').textContent=m.descLabel; $('descIn').placeholder=m.descHint; $('descIn').value='';
+  $('targetBox').hidden=!m.target; $('targetLbl').textContent=m.target||''; $('targetIn').value='';
+  $('dueBox').hidden=!m.due; $('dueLbl').textContent = m.dueRequired ? 'Grąžinsiu iki' : 'Grąžinsiu iki (nebūtina)';
+  $('dueIn').min=today(); $('dueIn').value = S.mod==='demo' ? plusDays(S.cfg.demoDays) : '';
+  renderThumbs('inv'); renderParts();
+  show2('vTake');
+}
+$('sendTake').onclick=function(){
+  var m=modCfg(S.mod), inv=S.mod==='invoice';
+  var desc=$('descIn').value.trim(), target=$('targetIn').value.trim(), due=$('dueIn').value;
+  if(inv && !S.photos.inv.length){ err('Nufotografuok sąskaitą.'); return; }
+  if(!inv && !S.photos.parts.length){ err('Nufotografuok bent vieną paimamą daiktą.'); return; }
+  if(S.photos.parts.some(function(p){return p.scanning;})){ err('Palauk, dar ieškomas kodas.'); return; }
+  if(S.photos.parts.some(function(p){return p.looking;})){ err('Palauk, dar ieškoma kataloge.'); return; }
+  var allKnown=S.photos.parts.length>0 && S.photos.parts.every(function(p){ return p.label; });
+  if(!desc && !allKnown){ err('Užpildyk: '+m.descLabel.toLowerCase()+'.'); $('descIn').focus(); return; }
+  if(m.targetRequired && !target){ err('Užpildyk: '+m.target.toLowerCase()+'.'); $('targetIn').focus(); return; }
+  if(m.dueRequired && !due){ err('Nurodyk, iki kada grąžinsi.'); return; }
+  var btn=$('sendTake'); busy(btn,true,'Keliamos nuotraukos…');
+  call('api_take',S.name,S.token,S.mod,{desc:desc,target:target,due:due,invNo:$('invNo').value,inv:S.photos.inv.map(function(p){ return {img:p.src,thumb:p.thumb}; }),
+    items:S.photos.parts.map(function(p){ return {imgs:p.photos.map(function(x){return x.src;}),thumbs:p.photos.map(function(x){return x.thumb;}),code:(p.code||'').trim()}; })})
+    .then(done).catch(fail).then(function(){ busy(btn,false,'Patvirtinti paėmimą'); });
+};
+
+/* ---- nuotraukos ir kodai ---- */
+function renderThumbs(kind){
+  var box=$('thumbs-'+kind); box.textContent='';
+  S.photos[kind].forEach(function(src,i){
+    var d=el('div','th'); var img=el('img'); img.src=src.src||src; img.alt='Nuotrauka '+(i+1);
+    var x=el('button',null,'×'); x.type='button'; x.setAttribute('aria-label','Pašalinti nuotrauką');
+    x.onclick=function(){ S.photos[kind].splice(i,1); renderThumbs(kind); };
+    d.append(img,x); box.appendChild(d);
+  });
+}
+var SCAN_SVG=svg('<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M11 8v8M15 8v8M18 8v8"/>');
+var codeTarget=-1;
+var PER_ITEM=4, MAX_TOTAL=15, addTarget=-1;
+function totalPhotos(){ return S.photos.parts.reduce(function(a,p){ return a+p.photos.length; },0)+S.photos.inv.length; }
+var CAM_SVG=svg('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>');
+var CAT={};
+/** Kodo pavadinimas iš lapo „Katalogas“ (pt.label). */
+function lookupCode(pt){
+  var k=normCode(pt.code);
+  if(!k){ pt.label=''; pt.looked=''; return; }
+  if(Object.prototype.hasOwnProperty.call(CAT,k)){ pt.label=CAT[k]; pt.looked=k; return; }
+  pt.looking=true;
+  call('api_lookup',S.name,S.token,[pt.code]).then(function(r){
+    Object.keys(r||{}).forEach(function(c){ CAT[c]=r[c]; });
+  }).catch(function(){}).then(function(){
+    pt.looking=false;
+    if(normCode(pt.code)===k){ pt.label=CAT[k]||''; pt.looked=Object.prototype.hasOwnProperty.call(CAT,k)?k:''; }
+    renderParts();
+  });
+}
+function renderParts(){
+  var box=$('plist'); box.textContent='';
+  var many=S.photos.parts.length>1;
+  S.photos.parts.forEach(function(pt,i){
+    var row=el('div','prow'), info=el('div','pinfo');
+    if(many) info.appendChild(el('div','pnum','Daiktas '+(i+1)));
+    var strip=el('div','pstrip');
+    pt.photos.forEach(function(ph,j){
+      var d=el('div','pph'), im=el('img'); im.src=ph.src; im.alt='Daikto '+(i+1)+' nuotrauka '+(j+1);
+      d.appendChild(im);
+      if(pt.photos.length>1){
+        var rm=el('button',null,'×'); rm.type='button'; rm.setAttribute('aria-label','Pašalinti nuotrauką');
+        rm.onclick=function(){ pt.photos.splice(j,1); renderParts(); }; d.appendChild(rm);
+      }
+      strip.appendChild(d);
+    });
+    if(pt.photos.length<PER_ITEM){
+      var add=el('button','padd'); add.type='button'; add.innerHTML=CAM_SVG+'<span>+ Foto</span>';
+      add.setAttribute('aria-label','Pridėti dar vieną šio daikto nuotrauką');
+      add.onclick=function(){ if(totalPhotos()>=MAX_TOTAL){ err('Vienu kartu daugiausia '+MAX_TOTAL+' nuotraukų.'); return; } addTarget=i; $('addCam').click(); };
+      strip.appendChild(add);
+    }
+    var top=el('div','ptop'), act=el('div','pact');
+    var st=el('div','pst'+(pt.code?' ok':''), pt.scanning?'Ieškomas kodas…':(pt.code?'Kodas nuskaitytas':'Kodas nerastas'));
+    var inp=el('input'); inp.type='text'; inp.value=pt.code||''; inp.placeholder='Įvesk kodą ranka';
+    inp.id='code-'+i; inp.setAttribute('aria-label','Daikto '+(i+1)+' kodas'); if(pt.code) inp.className='ok';
+    inp.oninput=function(){ pt.code=inp.value.trim(); pt.label=''; pt.looked=''; inp.className=pt.code?'ok':''; st.className='pst'+(pt.code?' ok':''); st.textContent=pt.code?'Kodas įvestas':'Kodas nerastas'; };
+    inp.onchange=function(){ lookupCode(pt); renderParts(); };
+    var sc=el('button','mini'); sc.type='button'; sc.innerHTML=SCAN_SVG+' Skenuoti';
+    sc.onclick=function(){ codeTarget=i; $('codeCam').click(); };
+    top.append(st,sc); act.append(inp); info.append(strip,top,act);
+    if(pt.code){
+      var lt = pt.looking ? 'Ieškoma kataloge…' : (pt.label || (pt.looked===normCode(pt.code) ? 'Šio kodo kataloge nėra — aprašyk žemiau' : ''));
+      if(lt) info.appendChild(el('div','plabel'+(pt.label?'':' none'),lt));
+    }
+    var x=el('button','x','×'); x.type='button'; x.setAttribute('aria-label','Pašalinti daiktą');
+    x.onclick=function(){ S.photos.parts.splice(i,1); renderParts(); };
+    row.append(info,x); box.appendChild(row);
+  });
+}
+$('addCam').addEventListener('change',function(){
+  var f=this.files&&this.files[0], i=addTarget, inp=this; addTarget=-1;
+  if(!f||i<0||!S.photos.parts[i]) return;
+  var pt=S.photos.parts[i]; if(!pt.code) pt.scanning=true; renderParts();
+  Promise.all([compress(f), pt.code?Promise.resolve(''):decodeFile(f)]).then(function(res){
+    pt.photos.push(res[0]); pt.scanning=false; if(res[1] && !pt.code){ pt.code=res[1]; lookupCode(pt); } renderParts();
+  }).catch(function(e){ pt.scanning=false; err(e.message); renderParts(); }).then(function(){ inp.value=''; });
+});
+var decodeChain=Promise.resolve();
+function decodeFile(file){
+  var job=decodeChain.then(function(){
+    var first = ('BarcodeDetector' in window)
+      ? createImageBitmap(file).then(function(b){ return new BarcodeDetector().detect(b); }).then(function(r){ if(r&&r.length) return r[0].rawValue; throw 0; })
+      : Promise.reject(0);
+    return first.catch(function(){
+      if(!window.Html5Qrcode) throw 0;
+      if(!S.qr) S.qr=new Html5Qrcode('qrHidden',{verbose:false});
+      return S.qr.scanFile(file,false);
+    });
+  }).then(function(t){ return String(t||'').trim(); }, function(){ return ''; });
+  decodeChain=job;
+  return job;
+}
+function compress(file){
+  return new Promise(function(res,rej){
+    var url=URL.createObjectURL(file); var img=new Image();
+    img.onload=function(){
+      var M=1600, w=img.naturalWidth, h=img.naturalHeight, s=Math.min(1,M/Math.max(w,h));
+      w=Math.round(w*s); h=Math.round(h*s);
+      var c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      // Maža kopija (iki 320 px) įdedama tiesiai į lentelės langelį
+      var T=320, t=Math.min(1,T/Math.max(w,h)), tc=document.createElement('canvas');
+      tc.width=Math.round(w*t); tc.height=Math.round(h*t);
+      tc.getContext('2d').drawImage(c,0,0,tc.width,tc.height);
+      URL.revokeObjectURL(url); res({src:c.toDataURL('image/jpeg',0.8), thumb:tc.toDataURL('image/jpeg',0.7)});
+    };
+    img.onerror=function(){ URL.revokeObjectURL(url); rej(new Error('Nepavyko nuskaityti nuotraukos. Bandyk dar kartą.')); };
+    img.src=url;
+  });
+}
+$('codeCam').addEventListener('change',function(){
+  var f=this.files&&this.files[0], i=codeTarget, inp=this; if(!f||i<0||!S.photos.parts[i]) return;
+  var pt=S.photos.parts[i]; pt.scanning=true; renderParts();
+  decodeFile(f).then(function(code){
+    pt.scanning=false;
+    if(code){ pt.code=code; lookupCode(pt); } else err('Kodas nenuskaitytas. Priartink telefoną prie kodo arba įvesk ranka.');
+    renderParts();
+  }).then(function(){ inp.value=''; });
+});
+document.querySelectorAll('input[type=file][data-kind]').forEach(function(inp){
+  inp.addEventListener('change',function(){
+    var kind=inp.dataset.kind, files=Array.prototype.slice.call(inp.files||[]);
+    var room=S.cfg.maxPhotos-S.photos[kind].length;
+    if(files.length>room){ err('Daugiausia '+S.cfg.maxPhotos+' nuotraukos.'); files=files.slice(0,Math.max(0,room)); }
+    if(kind==='parts'){
+      if(totalPhotos()+files.length>MAX_TOTAL){ err('Vienu kartu daugiausia '+MAX_TOTAL+' nuotraukų.'); files=files.slice(0,Math.max(0,MAX_TOTAL-totalPhotos())); }
+      files.forEach(function(f){
+        var pt={photos:[],code:'',scanning:true};
+        compress(f).then(function(ph){
+          pt.photos.push(ph); S.photos.parts.push(pt); renderParts();
+          return decodeFile(f).then(function(code){ pt.scanning=false; if(code && !pt.code){ pt.code=code; lookupCode(pt); } renderParts(); });
+        }).catch(function(e){ err(e.message); });
+      });
+      inp.value=''; return;
+    }
+    Promise.all(files.map(compress)).then(function(list){
+      S.photos[kind]=S.photos[kind].concat(list); renderThumbs(kind);
+    }).catch(function(e){ err(e.message); }).then(function(){ inp.value=''; });
+  });
+});
+
+/* ---- grąžinimas ---- */
+var R={sel:{},extra:[],target:''};
+function normCode(c){ return String(c||'').trim().toUpperCase().replace(/\s+/g,''); }
+function openReturn(){
+  R={sel:{},extra:[],target:''};
+  $('retTitle').textContent=modCfg(S.mod).title+': grąžinimas';
+  renderReturn(); show2('vRet');
+  if(!myOut(S.mod).length) err('Pas tave negrąžintų daiktų nėra. Jei grąžini neužregistruotą daiktą, nufotografuok jį — vadovas patikrins.');
+}
+function renderReturn(){
+  var out=myOut(S.mod), box=$('rlist'); box.textContent='';
+  if(!out.length) box.appendChild(el('div','muted','Sąrašas tuščias.'));
+  out.forEach(function(o){
+    var sel=R.sel[o.id], side=el('div','rside');
+    if(sel){
+      var x=el('button','x','×'); x.type='button'; x.setAttribute('aria-label','Atšaukti grąžinimą');
+      x.onclick=function(){ delete R.sel[o.id]; renderReturn(); };
+      side.append(el('span','okb','Grąžinama'),x);
+    } else {
+      var b=el('button','mini','Fotografuoti'); b.type='button';
+      b.onclick=function(){ R.target=o.id; $('retCam').click(); };
+      side.appendChild(b);
+    }
+    var row=outRow(o,side);
+    if(sel){ row.classList.add('sel'); var pic=row.querySelector('.pic'); pic.textContent=''; var im=el('img'); im.src=sel.src; im.alt='Grąžinamas daiktas'; pic.appendChild(im); }
+    box.appendChild(row);
+  });
+  var xb=$('xlist'); xb.textContent=''; $('xBox').hidden=!R.extra.length;
+  R.extra.forEach(function(e,i){
+    var row=el('div','rrow'), pic=el('div','pic'), im=el('img'); im.src=e.src; im.alt='Daiktas'; pic.appendChild(im);
+    var info=el('div','rinfo'); info.append(el('div','rcode',e.code||'Kodas nenuskaitytas'),el('div','rdesc','Bus grąžinta, vadovas patikrins'));
+    var side=el('div','rside'), x=el('button','x','×'); x.type='button'; x.setAttribute('aria-label','Pašalinti');
+    x.onclick=function(){ R.extra.splice(i,1); renderReturn(); };
+    side.appendChild(x); row.append(pic,info,side); xb.appendChild(row);
+  });
+  var n=Object.keys(R.sel).length+R.extra.length;
+  $('sendRet').textContent = n ? 'Patvirtinti grąžinimą ('+n+')' : 'Patvirtinti grąžinimą';
+}
+$('retCam').addEventListener('change',function(){
+  var f=this.files&&this.files[0], inp=this, target=R.target; R.target='';
+  if(!f) return;
+  $('sendRet').disabled=true; $('sendRet').textContent='Ieškomas kodas…';
+  Promise.all([compress(f),decodeFile(f)]).then(function(res){
+    var src=res[0].src, thumb=res[0].thumb, code=res[1], out=myOut(S.mod);
+    if(target){
+      var o=out.filter(function(x){return x.id===target;})[0];
+      R.sel[target]={src:src,thumb:thumb,code:code||(o&&o.code)||''};
+      if(code && o && o.code && normCode(code)!==normCode(o.code)) err('Nuskaitytas kodas '+code+' nesutampa su '+o.code+'. Patikrink, ar grąžini tą daiktą.');
+    } else if(code){
+      var m=out.filter(function(x){ return x.code && normCode(x.code)===normCode(code) && !R.sel[x.id]; })[0];
+      if(m) R.sel[m.id]={src:src,thumb:thumb,code:code};
+      else { R.extra.push({src:src,thumb:thumb,code:code}); err('Daiktas '+code+' nerastas tarp tavo paimtų. Jis bus pažymėtas patikrinimui.'); }
+    } else {
+      err('Kodas nenuskaitytas. Fotografuok kodą iš arčiau arba sąraše prie daikto spausk „Fotografuoti“.');
+    }
+  }).catch(function(e){ err(e.message); }).then(function(){ inp.value=''; $('sendRet').disabled=false; renderReturn(); });
+});
+$('sendRet').onclick=function(){
+  var items=Object.keys(R.sel).map(function(id){ return {id:id,code:R.sel[id].code,img:R.sel[id].src,thumb:R.sel[id].thumb}; })
+    .concat(R.extra.map(function(e){ return {id:'',code:e.code,img:e.src,thumb:e.thumb}; }));
+  if(!items.length){ err('Nufotografuok bent vieną grąžinamą daiktą.'); return; }
+  var btn=$('sendRet'); busy(btn,true,'Keliamos nuotraukos…');
+  call('api_return',S.name,S.token,S.mod,items).then(done).catch(fail).then(function(){ busy(btn,false); renderReturn(); });
+};
+
+/* ---- demo įranga ---- */
+var DM={data:null,filter:'all',item:null,edit:null};
+function dDay(s){ return s ? s.slice(5) : ''; }
+function dmState(it){
+  var t=today(), list=DM.data.res.filter(function(x){ return x.itemId===it.id && (x.status==='Rezervuota'||x.status==='Išduota'); }).sort(function(a,b){ return a.from<b.from?-1:1; });
+  var out=list.filter(function(x){ return x.status==='Išduota'; })[0];
+  if(out) return {k:out.to<t?'late':'out',t:out.to<t?'Vėluoja':'Išduota',x:out,line:out.client+' · iki '+dDay(out.to)+' · '+out.who};
+  var now=list.filter(function(x){ return x.from<=t && t<=x.to; })[0];
+  if(now) return {k:'bk',t:'Rezervuota',x:now,line:now.client+' · '+dDay(now.from)+'–'+dDay(now.to)+' · '+now.who};
+  var next=list[0];
+  return {k:'free',t:'Laisva',x:null,line:[it.country, next?'rezervuota nuo '+dDay(next.from)+' ('+next.client+')':''].filter(Boolean).join(' · ')||'—'};
+}
+function openDemo(){
+  $('dmList').textContent=''; $('dmCount').textContent='Įkeliama…'; show2('vDemo');
+  call('api_demoList',S.name,S.token).then(function(d){ DM.data=d; renderDemoList(); }).catch(fail);
+}
+var DM_F=[['all','Visa'],['free','Laisva'],['out','Išduota'],['mine','Mano']];
+function renderDemoList(){
+  var fb=$('dmFilt'); fb.textContent='';
+  DM_F.forEach(function(f){ var b=el('button','chip',f[1]); b.type='button'; b.setAttribute('aria-pressed',String(DM.filter===f[0])); b.onclick=function(){ DM.filter=f[0]; renderDemoList(); }; fb.appendChild(b); });
+  var q=fold($('dmQ').value), box=$('dmList'); box.textContent='';
+  var shown=0, lastCat='';
+  DM.data.items.forEach(function(it){
+    var st=dmState(it);
+    if(DM.filter==='free' && st.k!=='free') return;
+    if(DM.filter==='out' && !(st.k==='out'||st.k==='late')) return;
+    if(DM.filter==='mine' && !DM.data.res.some(function(x){ return x.itemId===it.id && x.who===S.name && (x.status==='Rezervuota'||x.status==='Išduota'); })) return;
+    if(q){ var hay=fold(it.name+' '+it.sn+' '+it.cat+' '+it.country+' '+(st.x?st.x.client+' '+st.x.who:'')); if(hay.indexOf(q)<0) return; }
+    if(it.cat!==lastCat){ box.appendChild(el('div','dcat',it.cat)); lastCat=it.cat; }
+    var b=el('button','drow'); b.type='button';
+    var l=el('div'); l.append(el('div','dn',it.name+(it.sn?'  ·  '+it.sn:'')),el('div','ds',st.line));
+    b.append(l,el('span','st '+st.k,st.t)); b.onclick=function(){ openDemoItem(it.id); };
+    box.appendChild(b); shown++;
+  });
+  $('dmCount').textContent = shown ? 'Rodoma: '+shown+' iš '+DM.data.items.length : 'Nieko nerasta.';
+}
+$('dmQ').addEventListener('input',function(){ if(DM.data) renderDemoList(); });
+document.querySelectorAll('[data-back-demo]').forEach(function(b){ b.onclick=function(){ if(!S.busy){ show2('vDemo'); renderDemoList(); } }; });
+document.querySelectorAll('[data-back-demoitem]').forEach(function(b){ b.onclick=function(){ if(!S.busy) openDemoItem(DM.item.id); }; });
+function openDemoItem(id){
+  var it=DM.data.items.filter(function(x){ return x.id===id; })[0]; if(!it) return openDemo();
+  DM.item=it; var st=dmState(it), t=today();
+  $('diName').textContent=it.name; $('diMeta').textContent=[it.sn?'SN '+it.sn:'',it.cat,it.country].filter(Boolean).join(' · ');
+  $('diState').textContent=(st.k==='free'?'Laisva':st.t+': ')+(st.x?st.x.client+', '+dDay(st.x.from)+' – '+dDay(st.x.to)+' ('+st.x.who+')':'');
+  $('diState').className = st.k==='late'?'err':'info';
+  $('diNote').textContent=it.note?'Pastaba: '+it.note:''; $('diNote').hidden=!it.note;
+  var box=$('diRes'); box.textContent='';
+  var list=DM.data.res.filter(function(x){ return x.itemId===it.id; }).sort(function(a,b){ return a.from<b.from?1:-1; });
+  list.sort(function(a,b){ var A=(a.status==='Grąžinta'?1:0), B=(b.status==='Grąžinta'?1:0); return A-B || (A? (a.from<b.from?1:-1) : (a.from<b.from?-1:1)); });
+  if(!list.length) box.appendChild(el('div','muted','Rezervacijų nėra.'));
+  list.forEach(function(x){
+    var past=x.status==='Grąžinta', row=el('div','dres'+(past?' past':''));
+    var inf=el('div'); inf.append(el('div','dd',dDay(x.from)+' – '+dDay(x.to)),el('div','ds',x.client+' · '+x.who),el('div','ds',x.status+(x.status==='Išduota'&&x.to<t?' · vėluoja':'')+(x.note?' · '+x.note:'')));
+    var side=el('div','tbtns');
+    var btn=function(txt,cls,fn){ var b=el('button','mini'+(cls?' '+cls:''),txt); b.type='button'; b.onclick=fn; side.appendChild(b); return b; };
+    if(x.status==='Rezervuota'){
+      var bi=btn('Išduoti','go',function(){ demoAct('issue',x,bi); });
+      btn('Keisti','',function(){ openDemoBook(x); });
+      var bc=btn('Atšaukti','',function(){ if(window.confirm('Atšaukti rezervaciją: '+x.client+', '+x.from+' – '+x.to+'?')) demoAct('cancel',x,bc); });
+    } else if(x.status==='Išduota'){
+      var br=btn('Grąžinta','go',function(){ if(window.confirm(it.name+' grąžinta į sandėlį / biurą?')) demoAct('return',x,br); });
+      btn('Pratęsti','',function(){ openDemoBook(x); });
+    }
+    row.append(inf,side); box.appendChild(row);
+  });
+  show2('vDemoItem');
+}
+function demoAct(action,x,btn){
+  if(S.busy) return; busy(btn,true,'…');
+  call('api_demo',S.name,S.token,{action:action,id:x.id}).then(demoDone).catch(fail).then(function(){ busy(btn,false); });
+}
+function demoDone(r){ DM.data=r.demo; var id=DM.item&&DM.item.id; S.after=function(){ openDemoItem(id); }; done(r); }
+$('diBook').onclick=function(){ openDemoBook(null); };
+var DUR=[['1 d.',0],['1 sav.',6],['2 sav.',13],['1 mėn.',29]];
+function addDays(s,n){ var p=s.split('-'), d=new Date(+p[0],+p[1]-1,+p[2]+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function openDemoBook(x){
+  DM.edit=x; var it=DM.item;
+  $('dbTitle').textContent = x ? (x.status==='Išduota'?'Pratęsti / keisti':'Keisti rezervaciją') : 'Rezervacija';
+  $('dbItem').textContent=it.name+(it.sn?' · SN '+it.sn:'');
+  $('dbFrom').value = x ? x.from : today(); $('dbTo').value = x ? x.to : addDays(today(),6);
+  $('dbFrom').disabled = !!(x && x.status==='Išduota');
+  $('dbClient').value = x ? x.client : ''; $('dbNote').value=''; $('dbNoteBox').hidden=!!x;
+  $('dbIssue').checked=false;
+  $('dbSave').textContent = x ? 'Išsaugoti' : 'Rezervuoti';
+  var db=$('dbDur'); db.textContent='';
+  DUR.forEach(function(d){ var b=el('button','chip',d[0]); b.type='button'; b.onclick=function(){ $('dbTo').value=addDays($('dbFrom').value||today(),d[1]); dbCheck(); }; db.appendChild(b); });
+  dbCheck(); show2('vDemoBook');
+}
+function dbCheck(){
+  var f=$('dbFrom').value, t=$('dbTo').value, it=DM.item, self=DM.edit&&DM.edit.id;
+  $('dbIssueBox').hidden = !!DM.edit || !(f && f<=today());
+  if(!$('dbIssueBox').hidden && $('dbSave').textContent!=='Išsaugoti') $('dbSave').textContent = $('dbIssue').checked ? 'Išduoti' : 'Rezervuoti';
+  var busyL=DM.data.res.filter(function(x){ return x.itemId===it.id && x.id!==self && (x.status==='Rezervuota'||x.status==='Išduota') && x.to>=today(); }).sort(function(a,b){ return a.from<b.from?-1:1; });
+  var clash=busyL.filter(function(x){ return f && t && x.from<=t && f<=x.to; })[0];
+  var txt = busyL.length ? 'Užimta: '+busyL.map(function(x){ return dDay(x.from)+'–'+dDay(x.to)+' '+x.client; }).join('; ') : 'Ši įranga artimiausiu metu laisva.';
+  if(clash) txt='Pasirinktos datos užimtos: '+clash.client+' '+dDay(clash.from)+'–'+dDay(clash.to)+' ('+clash.who+').';
+  $('dbBusy').textContent=txt; $('dbBusy').className = clash ? 'err' : 'info';
+  return !clash;
+}
+['dbFrom','dbTo'].forEach(function(id){ $(id).addEventListener('change',function(){ if(id==='dbFrom' && $('dbTo').value<this.value) $('dbTo').value=this.value; $('err').hidden=true; dbCheck(); }); });
+$('dbIssue').addEventListener('change',dbCheck);
+$('dbSave').onclick=function(){
+  var f=$('dbFrom').value, t=$('dbTo').value, c=$('dbClient').value.trim(), x=DM.edit;
+  if(!f||!t){ err('Pasirink datas „Nuo“ ir „Iki“.'); return; }
+  if(t<f){ err('Data „Iki“ turi būti ne ankstesnė nei „Nuo“.'); return; }
+  if(!c){ err('Nurodyk klientą arba vietą.'); $('dbClient').focus(); return; }
+  if(!dbCheck()){ err('Tos datos jau užimtos. Pasirink kitas.'); return; }
+  var btn=$('dbSave'), lbl=btn.textContent; busy(btn,true,'Saugoma…');
+  var d = x ? {action:'edit',id:x.id,from:f,to:t,client:c} : {action:'book',itemId:DM.item.id,from:f,to:t,client:c,note:$('dbNote').value,issueNow:$('dbIssue').checked};
+  call('api_demo',S.name,S.token,d).then(demoDone).catch(fail).then(function(){ busy(btn,false,lbl); });
+};
+
+/* ---- transportas ---- */
+var WD=['Sk','Pr','An','Tr','Kt','Pn','Št'], MO=['saus.','vas.','kov.','bal.','geg.','birž.','liep.','rugp.','rugs.','spal.','lapkr.','gruod.'];
+var TR={day:'',rec:null};
+function trS(){ return (S.me&&S.me.transport)||{vehicles:[],mine:[],busy:[],open:[]}; }
+function dOf(s){ var p=s.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
+function dLabel(s){ var d=dOf(s); var t=today(), tm=plusDays(1);
+  return (s===t?'Šiandien':s===tm?'Rytoj':WD[d.getDay()])+', '+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function busyOn(day,veh){ return trS().busy.filter(function(x){ return x.day===day && (!veh||x.vehicle===veh); }).sort(function(a,b){ return a.from<b.from?-1:1; }); }
+function openTr(){
+  var t=trS(); $('trVeh').textContent=t.vehicles.join(' · ');
+  var box=$('trMine'); box.textContent='';
+  if(!t.mine.length) box.appendChild(el('div','muted','Rezervacijų nėra.'));
+  t.mine.slice().sort(function(a,b){ return (a.day+a.from)<(b.day+b.from)?-1:1; }).forEach(function(x){
+    var row=el('div','rrow trr'+(x.status==='Paimta'?' sel':''));
+    var info=el('div','rinfo'); info.append(el('div','rdesc',dLabel(x.day)),el('div','rcode ttime',x.from+'–'+x.to),
+      el('div','rdesc',[x.status==='Paimta'?'Paimtas — grąžink su pilnu baku':'Rezervuota', t.vehicles.length>1?x.vehicle:'', x.purpose].filter(Boolean).join(' · ')));
+    var side=el('div','tbtns');
+    if(x.status==='Paimta'){ var r=el('button','mini go','Grąžinti'); r.type='button'; r.onclick=function(){ openTrRet(x); }; side.appendChild(r); }
+    else {
+      if(x.day===today()){ var g=el('button','mini go','Paimti'); g.type='button'; g.onclick=function(){ trAct('take',x,g); }; side.appendChild(g); }
+      var c=el('button','mini','Atšaukti'); c.type='button';
+      c.onclick=function(){ if(window.confirm('Atšaukti rezervaciją '+dLabel(x.day)+' '+x.from+'–'+x.to+'?')) trAct('cancel',x,c); };
+      side.appendChild(c);
+    }
+    row.append(info,side); box.appendChild(row);
+  });
+  var cal=$('trCal'); cal.textContent='';
+  for(var i=0;i<14;i++){
+    var day=plusDays(i), list=busyOn(day), row=el('div','trow'+(i===0?' today':''));
+    var cell=el('div');
+    if(!list.length) cell.appendChild(el('span','free','Laisva'));
+    list.forEach(function(x){ cell.appendChild(el('span','bk'+(x.mine?' me':''),x.from+'–'+x.to+' '+(x.mine?'Tu':x.name)+(t.vehicles.length>1?' · '+x.vehicle:''))); });
+    row.append(el('div','td',dLabel(day)),cell); cal.appendChild(row);
+  }
+  show2('vTr');
+}
+function trAct(action,x,btn){
+  if(S.busy) return;
+  if(action==='take' && !(S.me&&S.me.inside)){ err('Pirmiausia pradiniame ekrane paspausk „Atvykau“ — transportas paimamas sandėlyje.'); return; }
+  busy(btn,true,'…');
+  call('api_transport',S.name,S.token,{action:action,id:x.id}).then(done).catch(fail).then(function(){ busy(btn,false); });
+}
+$('trNew').onclick=function(){ openTrBook(); };
+document.querySelectorAll('[data-back-tr]').forEach(function(b){ b.onclick=function(){ if(!S.busy) openTr(); }; });
+function timeOpts(sel,from,to,val){
+  sel.textContent=''; var step=S.cfg.tr.step, a=toMin(from), b=toMin(to);
+  for(var m=a;m<=b;m+=step){ var t=String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'); var o=el('option',null,t); o.value=t; sel.appendChild(o); }
+  if(val) sel.value=val;
+}
+function toMin(t){ var p=t.split(':'); return (+p[0])*60+(+p[1]); }
+function openTrBook(){
+  var t=trS(), vs=$('trVehSel'); vs.textContent='';
+  t.vehicles.forEach(function(v){ var o=el('option',null,v); o.value=v; vs.appendChild(o); });
+  $('trVehBox').hidden=t.vehicles.length<2;
+  $('trDate').min=today(); $('trDate').max=plusDays(S.cfg.tr.days); $('trPurpose').value='';
+  timeOpts($('trFrom'),S.cfg.tr.from,S.cfg.tr.to,'08:00'); timeOpts($('trTo'),S.cfg.tr.from,S.cfg.tr.to,'17:00');
+  TR.auto=false; pickDay(today()); show2('vTrBook');
+}
+function pickDay(day){
+  TR.day=day; $('trDate').value=day;
+  var box=$('trDays'); box.textContent=''; var veh=$('trVehSel').value;
+  for(var i=0;i<21;i++){
+    var d=plusDays(i), dt=dOf(d), b=el('button','day'+(busyOn(d,veh).length?' has':'')); b.type='button';
+    b.setAttribute('aria-pressed',String(d===day)); b.setAttribute('aria-label',dLabel(d));
+    b.append(el('span','wd',i===0?'Šiand.':WD[dt.getDay()]),el('span','dn',String(dt.getDate())),el('span','mo',MO[dt.getMonth()]),el('span','bz'));
+    (function(d){ b.onclick=function(){ pickDay(d); }; })(d);
+    box.appendChild(b);
+  }
+  var sel=box.querySelector('[aria-pressed="true"]'); if(sel) sel.scrollIntoView({block:'nearest',inline:'center'});
+  var list=busyOn(day,veh);
+  if(TR.auto && day!==today()){ $('trFrom').value='08:00'; $('trTo').value='17:00'; TR.auto=false; }
+  if(day===today()){ var now=new Date(), nm=now.getHours()*60+now.getMinutes(), st=S.cfg.tr.step, next=Math.ceil(nm/st)*st;
+    if(next>toMin($('trFrom').value) && next<toMin(S.cfg.tr.to)){ var hh=String(Math.floor(next/60)).padStart(2,'0')+':'+String(next%60).padStart(2,'0'); $('trFrom').value=hh; TR.auto=true;
+      if(toMin($('trTo').value)<=next) $('trTo').value=S.cfg.tr.to; } }
+  $('trDayBusy').textContent = list.length ? 'Tą dieną jau užimta: '+list.map(function(x){ return x.from+'–'+x.to+' '+(x.mine?'tu':x.name); }).join(', ') : dLabel(day)+' — laisva visą dieną';
+}
+$('trDate').onchange=function(){ if(this.value) pickDay(this.value); };
+$('trVehSel').onchange=function(){ pickDay(TR.day); };
+$('trFrom').onchange=function(){ if(toMin($('trTo').value)<=toMin(this.value)){ var o=$('trTo').options; for(var i=0;i<o.length;i++){ if(toMin(o[i].value)>toMin(this.value)+120||i===o.length-1){ $('trTo').value=o[i].value; break; } } } };
+$('trBook').onclick=function(){
+  var f=$('trFrom').value, t=$('trTo').value, veh=$('trVehSel').value;
+  if(!TR.day){ err('Pasirink dieną.'); return; }
+  if(toMin(t)<=toMin(f)){ err('Grąžinimo laikas turi būti vėlesnis nei paėmimo.'); return; }
+  var clash=busyOn(TR.day,veh).filter(function(x){ return toMin(x.from)<toMin(t) && toMin(f)<toMin(x.to); })[0];
+  if(clash){ err('Tuo metu jau rezervuota: '+clash.name+' '+clash.from+'–'+clash.to+'. Pasirink kitą laiką.'); return; }
+  var btn=$('trBook'); busy(btn,true,'Rezervuojama…');
+  call('api_transport',S.name,S.token,{action:'book',vehicle:veh,day:TR.day,from:f,to:t,purpose:$('trPurpose').value})
+    .then(done).catch(fail).then(function(){ busy(btn,false,'Rezervuoti'); });
+};
+function openTrRet(x){
+  TR.rec=x; S.photos.dash=[]; S.photos.trunk=[]; S.fuel=''; renderThumbs('dash'); renderThumbs('trunk'); renderFuel();
+  $('trRetTitle').textContent=(trS().vehicles.length>1?x.vehicle+': ':'')+'grąžinimas'; $('notesIn').value='';
+  show2('vTrRet');
+}
+function renderFuel(){
+  var box=$('fuelChips'); box.textContent='';
+  S.cfg.tr.fuel.forEach(function(f){
+    var b=el('button','chip',f); b.type='button'; b.setAttribute('aria-pressed',String(f===S.fuel));
+    b.onclick=function(){ S.fuel=f; renderFuel(); }; box.appendChild(b);
+  });
+  $('notesLbl').textContent = S.fuel && S.fuel!=='Pilnas' ? 'Kodėl bakas nepilnas? (būtina)' : 'Pastabos, gedimai (nebūtina)';
+}
+['dash','trunk'].forEach(function(k){
+  $(k+'Cam').addEventListener('change',function(){
+    var f=this.files&&this.files[0], inp=this; if(!f) return;
+    compress(f).then(function(ph){ S.photos[k]=[ph]; renderThumbs(k); }).catch(function(e){ err(e.message); }).then(function(){ inp.value=''; });
+  });
+});
+$('trRet').onclick=function(){
+  if(!(S.me&&S.me.inside)){ err('Pirmiausia pradiniame ekrane paspausk „Atvykau“ — transportas grąžinamas sandėlyje.'); return; }
+  if(!S.photos.dash.length){ err('Nufotografuok prietaisų skydelį.'); return; }
+  if(!S.photos.trunk.length){ err('Nufotografuok bagažinę.'); return; }
+  if(!S.fuel){ err('Pažymėk, ar kuro bakas pilnas.'); return; }
+  if(S.fuel!=='Pilnas' && !$('notesIn').value.trim()){ err('Bakas turi būti pilnas. Jei nepripildei — parašyk kodėl.'); $('notesIn').focus(); return; }
+  var btn=$('trRet'); busy(btn,true,'Keliamos nuotraukos…');
+  call('api_transport',S.name,S.token,{action:'return',id:TR.rec.id,fuel:S.fuel,notes:$('notesIn').value,
+    dash:{img:S.photos.dash[0].src,thumb:S.photos.dash[0].thumb},trunk:{img:S.photos.trunk[0].src,thumb:S.photos.trunk[0].thumb}})
+    .then(done).catch(fail).then(function(){ busy(btn,false,'Patvirtinti grąžinimą'); });
+};
+
+/* ---- bendri ---- */
+function done(r){ S.me=r.me; $('doneMsg').textContent=r.msg; show2('vDone'); }
+function fail(e){
+  var m=e && e.message ? e.message : 'Nepavyko išsiųsti. Patikrink internetą ir bandyk dar kartą.';
+  if(/Prisijunk iš naujo/.test(m)){ forget(); boot(); }
+  $('err').className='err'; err(m);
+}
+$('doneBtn').onclick=function(){ var f=S.after; S.after=null; (f||renderHome)(); };
+
+$('loginBtn').onclick=function(){
+  var n=S.pick, p=$('pinIn').value.trim(), btn=$('loginBtn');
+  if(!n){ err('Įvesk pirmas savo vardo raides ir pasirink save iš sąrašo.'); $('nameIn').focus(); return; }
+  if(!p){ err('Įvesk PIN.'); return; }
+  busy(btn,true,'Tikrinama…');
+  call('api_login',n,p).then(function(r){
+    S.name=n; S.token=r.token; S.me=r.me; save(); $('pinIn').value=''; renderHome(); attFlush();
+  }).catch(function(e){ err(e.message); }).then(function(){ busy(btn,false,'Prisijungti'); });
+};
+var ACT={email:''};
+$('goAct').onclick=function(){ $('actStep1').hidden=false; $('actStep2').hidden=true; $('actEmail').value=ACT.email; show2('vAct'); $('actEmail').focus(); };
+$('actBack').onclick=function(){ if(!S.busy) show2('vLogin'); };
+function sendCode(){
+  var e=$('actEmail').value.trim().toLowerCase(), btn=$('sendCode');
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){ err('Įvesk teisingą el. pašto adresą.'); return; }
+  busy(btn,true,'Siunčiama…');
+  call('api_sendCode',e).then(function(r){
+    ACT.email=e; $('actStep1').hidden=true; $('actStep2').hidden=false; $('err').hidden=true;
+    $('actInfo').textContent='Sveikas, '+r.name+'! Kodą išsiuntėme į '+r.masked+'. Patikrink ir šlamšto (spam) aplanką.';
+    $('actCode').value=''; $('actPin').value=''; $('actPin2').value=''; $('actCode').focus();
+  }).catch(function(e){ $('err').className='err'; err(e.message); }).then(function(){ busy(btn,false,'Siųsti kodą'); });
+}
+$('sendCode').onclick=sendCode;
+$('resend').onclick=function(){ $('actEmail').value=ACT.email; $('actStep1').hidden=false; $('actStep2').hidden=true; };
+$('actSave').onclick=function(){
+  var c=$('actCode').value.trim(), p=$('actPin').value.trim(), p2=$('actPin2').value.trim(), btn=$('actSave');
+  if(!/^\d{6}$/.test(c)){ err('Įvesk 6 skaitmenų kodą iš laiško.'); return; }
+  if(!/^\d{4,8}$/.test(p)){ err('PIN turi būti iš 4–8 skaitmenų.'); return; }
+  if(p!==p2){ err('PIN nesutampa. Įvesk dar kartą.'); $('actPin2').value=''; return; }
+  busy(btn,true,'Saugoma…');
+  call('api_activate',ACT.email,c,p).then(function(r){
+    S.name=r.name; S.token=r.token; S.me=r.me; save(); renderHome(); err('PIN išsaugotas. Kitą kartą prisijungsi automatiškai.'); $('err').className='info';
+  }).catch(function(e){ $('err').className='err'; err(e.message); }).then(function(){ busy(btn,false,'Išsaugoti PIN ir prisijungti'); });
+};
+$('logout').onclick=function(){ forget(); $('who').hidden=true; show2('vLogin'); };
+
+/* ---- vardo paieška (visas sąrašas į telefoną nesiunčiamas) ---- */
+var findT=null, findSeq=0, FIND={}, FIND_MAX=8;
+function fold(x){ return String(x||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim(); }
+function nameHit(n,q){ var f=fold(n); return f.indexOf(q)===0 || f.split(' ').some(function(w){ return w.indexOf(q)===0; }); }
+function pickName(n){ S.pick=n; $('nameIn').value=n; $('nameIn').classList.add('ok'); $('nameSugg').hidden=true; }
+function showSugg(list,q){
+  var box=$('nameSugg'); box.textContent=''; box.hidden=false;
+  if(!list.length){ box.appendChild(el('div','muted','Nerasta. Patikrink raides arba kreipkis į sandėlio vadovą.')); return; }
+  list.forEach(function(n){
+    var b=el('button'); b.type='button';
+    var f=fold(n), k=f.indexOf(q)===0?0:f.indexOf(' '+q)+1;       // paryškinama sutapusi dalis
+    b.append(document.createTextNode(n.slice(0,k)),el('b',null,n.slice(k,k+q.length)),document.createTextNode(n.slice(k+q.length)));
+    b.onclick=function(){ pickName(n); $('pinIn').focus(); };
+    box.appendChild(b);
+  });
+  if(list.length===1){ S.pick=list[0]; $('nameIn').classList.add('ok'); box.firstChild.classList.add('on'); }
+}
+$('nameIn').addEventListener('input',function(){
+  S.pick=''; this.classList.remove('ok');
+  var q=fold(this.value), box=$('nameSugg'); clearTimeout(findT);
+  if(q.length<2){ box.hidden=true; box.textContent=''; return; }
+  // jei jau turime trumpesnės užklausos pilną atsakymą — filtruojame telefone, be laukimo
+  var keys=Object.keys(FIND).filter(function(k){ return q.indexOf(k)===0 && FIND[k].length<FIND_MAX; }).sort(function(a,b){ return b.length-a.length; });
+  if(keys.length){ showSugg(FIND[keys[0]].filter(function(n){ return nameHit(n,q); }),q); return; }
+  box.hidden=false; box.textContent=''; box.appendChild(el('div','muted','Ieškoma…'));
+  findT=setTimeout(function(){
+    var my=++findSeq;
+    call('api_findNames',q).then(function(list){
+      FIND[q]=list;
+      if(my===findSeq && fold($('nameIn').value)===q) showSugg(list,q);
+    }).catch(function(e){ if(my===findSeq){ box.hidden=true; err(e.message); } });
+  },150);
+});
+
+function boot(){
+  load(); show2('vLoading');
+  call('api_init',S.name,S.token).then(function(cfg){
+    S.cfg=cfg;
+    if(S.name) pickName(S.name);
+    if(cfg.me){
+      S.me=cfg.me;
+      var ap=attGet();
+      if(ap && ap.name===S.name){ S.me.inside=(ap.action==='in'); if(S.me.inside) S.me.since=ap.at; }
+      renderHome(); attFlush();
+    }
+    else {
+      if(S.token) forget();
+      $('who').hidden=true; show2('vLogin');
+    }
+  }).catch(function(e){ show2('vLogin'); err('Nepavyko prisijungti prie lentelės: '+(e.message||e)); });
+}
+boot();
+</script>
+</body>
+</html>
